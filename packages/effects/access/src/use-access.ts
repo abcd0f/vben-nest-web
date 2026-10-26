@@ -3,6 +3,14 @@ import { computed } from 'vue';
 import { preferences, updatePreferences } from '@vben/preferences';
 import { useAccessStore, useUserStore } from '@vben/stores';
 
+/**
+ * 超级管理员通配权限码
+ *
+ * 后端 `AuthService` 对 `superadmin` 角色只下发这一个码（不逐条查询权限表），
+ * 因此前端判断权限时必须先做通配匹配，否则超管的所有按钮都会被判成无权限。
+ */
+const SUPER_ADMIN_PERMISSION_CODE = '*:*:*';
+
 function useAccess() {
   const accessStore = useAccessStore();
   const userStore = useUserStore();
@@ -28,6 +36,11 @@ function useAccess() {
    */
   function hasAccessByCodes(codes: string[]) {
     const userCodesSet = new Set(accessStore.accessCodes);
+
+    // 通配码直接放行：后端超管只下发 `*:*:*`
+    if (userCodesSet.has(SUPER_ADMIN_PERMISSION_CODE)) {
+      return true;
+    }
 
     const intersection = codes.filter((item) => userCodesSet.has(item));
     return intersection.length > 0;

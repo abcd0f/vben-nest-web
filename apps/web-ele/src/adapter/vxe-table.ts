@@ -19,7 +19,7 @@ setupVbenVxeTable({
     vxeUI.setConfig({
       grid: {
         align: 'center',
-        border: false,
+        border: 'inner',
         columnConfig: {
           resizable: true,
         },
@@ -41,6 +41,23 @@ setupVbenVxeTable({
         round: true,
         showOverflow: true,
         size: 'small',
+        pagerConfig: {
+          // 默认条数
+          pageSize: 10,
+          // 分页可选条数
+          pageSizes: [10, 20, 30, 40, 50],
+        },
+        rowConfig: {
+          // 鼠标移入行显示 hover 样式
+          isHover: true,
+          // 点击行高亮
+          isCurrent: false,
+        },
+        customConfig: {
+          // 表格右上角自定义列配置 是否保存到localStorage
+          // 必须存在id参数才能使用
+          storage: false,
+        },
       } as VxeTableGridOptions,
     });
 
