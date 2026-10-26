@@ -204,7 +204,7 @@ watch(
         },
         content:
           content ||
-          `${userStore.userInfo?.username} - ${userStore.userInfo?.realName}`,
+          `${userStore.userInfo?.username} - ${userStore.userInfo?.nickName}`,
       });
     } else {
       destroyWatermark();
@@ -219,7 +219,7 @@ watch(
 <template>
   <BasicLayout
     :avatar
-    :text="userStore.userInfo?.realName"
+    :text="userStore.userInfo?.nickName"
     @clear-preferences-and-logout="handleLogout"
     @logout="handleLogout"
   >
@@ -227,7 +227,7 @@ watch(
       <UserDropdown
         :avatar
         :menus
-        :text="userStore.userInfo?.realName"
+        :text="userStore.userInfo?.nickName"
         description="ann.vben@gmail.com"
         tag-text="Pro"
         @clear-preferences-and-logout="handleLogout"

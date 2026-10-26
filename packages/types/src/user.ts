@@ -5,7 +5,7 @@ interface UserInfo extends BasicUserInfo {
   /**
    * 用户描述
    */
-  desc: string;
+  remark: string;
   /**
    * 首页地址
    */

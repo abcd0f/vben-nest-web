@@ -16,11 +16,11 @@ interface BasicUserInfo {
   /**
    * 用户昵称
    */
-  realName: string;
+  nickName: string;
   /**
    * 用户角色
    */
-  roles?: string[];
+  roleKeys?: string[];
   /**
    * 用户id
    */
