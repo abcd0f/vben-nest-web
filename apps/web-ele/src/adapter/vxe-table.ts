@@ -53,6 +53,22 @@ setupVbenVxeTable({
           // 点击行高亮
           isCurrent: false,
         },
+        // 右上角工具栏
+        toolbarConfig: {
+          // 自定义列
+          custom: true,
+          customOptions: {
+            icon: 'vxe-icon-setting',
+          },
+          // 最大化
+          zoom: true,
+          // 刷新
+          refresh: true,
+          refreshOptions: {
+            // 默认为reload 修改为在当前页刷新
+            code: 'query',
+          },
+        },
         customConfig: {
           // 表格右上角自定义列配置 是否保存到localStorage
           // 必须存在id参数才能使用

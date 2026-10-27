@@ -1,19 +1,17 @@
 import type { SystemDeptApi } from './model';
 
-import type { PageResult } from '#/api/common';
-
 import { requestClient } from '#/api/request';
 
 /**
- * 获取部门列表（分页）
+ * 获取部门列表
  *
- * 按 `orderNum` 升序、`deptId` 升序排列。
+ * 后端不分页，一次返回全部未删除部门（平级结构，靠 `parentId` 关联）。
+ * 树形展示交给表格的 `treeConfig.transform`，需要树结构时前端自行组装。
  */
 export function deptListApi(params?: SystemDeptApi.ListParams) {
-  return requestClient.get<PageResult<SystemDeptApi.Dept>>(
-    '/system/dept/list',
-    { params },
-  );
+  return requestClient.get<SystemDeptApi.Dept[]>('/system/dept/list', {
+    params,
+  });
 }
 
 /**
@@ -26,7 +24,7 @@ export function deptInfoApi(deptId: string) {
 
 /**
  * 创建部门
- * @param data 创建参数
+ * @param data 创建参数，`parentId` 为 "0" 表示根部门
  * @returns 创建后的部门
  */
 export function createDeptApi(data: SystemDeptApi.CreateParams) {
