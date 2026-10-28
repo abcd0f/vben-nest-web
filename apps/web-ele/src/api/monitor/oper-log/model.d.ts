@@ -1,4 +1,4 @@
-import type { Status } from '#/api/common';
+import type { PageParams, PageResult, Status } from '#/api/common';
 
 /**
  * 操作日志接口类型
@@ -36,36 +36,18 @@ export namespace MonitorOperLogApi {
   }
 
   /** 列表查询参数，对应后端 `OperationLogQueryDto` */
-  export interface ListParams {
+  export interface ListParams extends PageParams {
     /** 模块标题（后端用 contains 模糊匹配） */
     title?: string;
     /** 操作人用户 ID，必须是纯数字字符串 */
     operUserId?: string;
     /** 操作状态：0 成功、1 失败 */
     status?: Status;
-    /** 时间范围起点（含），需为 ISO 8601 字符串 */
+    /** 时间范围起点（含），可传本地日期时间或 ISO 8601 字符串 */
     startTime?: string;
-    /** 时间范围终点（含），需为 ISO 8601 字符串 */
+    /** 时间范围终点（含），可传本地日期时间或 ISO 8601 字符串 */
     endTime?: string;
-    /** 页码，从 1 开始 */
-    page?: number;
-    /** 每页数量 */
-    pageSize?: number;
   }
 
-  /**
-   * 列表返回体
-   *
-   * 与登录日志一致：`records / total / page / pageSize` 平铺，无 `meta` 包装。
-   */
-  export interface ListResult {
-    /** 当前页记录 */
-    records: OperLog[];
-    /** 总记录数 */
-    total: number;
-    /** 当前页码 */
-    page: number;
-    /** 每页数量 */
-    pageSize: number;
-  }
+  export type ListResult = PageResult<OperLog>;
 }

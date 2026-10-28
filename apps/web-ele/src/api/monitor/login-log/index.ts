@@ -5,7 +5,7 @@ import { requestClient } from '#/api/request';
 /**
  * 查询登录日志列表
  *
- * 后端按 `loginTime` 倒序分页返回，未传分页参数时默认第 1 页、每页 10 条。
+ * 后端按 `loginTime` 倒序分页返回，分页元数据位于 `meta`。
  */
 export function loginLogListApi(params?: MonitorLoginLogApi.ListParams) {
   return requestClient.get<MonitorLoginLogApi.ListResult>('/system/login-log', {

@@ -60,8 +60,7 @@ const gridOptions: VxeTableGridOptions = {
           page: page.currentPage,
           pageSize: page.pageSize,
         });
-        // 后端返回 records/total 平铺结构，这里转成表格代理要的 items/total
-        return { items: resp.records, total: resp.total };
+        return { items: resp.items, total: resp.meta.total };
       },
     },
   },

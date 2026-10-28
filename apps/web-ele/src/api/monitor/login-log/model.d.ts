@@ -1,4 +1,4 @@
-import type { Status } from '#/api/common';
+import type { PageParams, PageResult, Status } from '#/api/common';
 
 /**
  * 登录日志接口类型
@@ -31,37 +31,18 @@ export namespace MonitorLoginLogApi {
    * DTO 注释写的是「精确匹配」，但服务层实现用的是 `contains`，
    * 即 `userName` / `ipaddr` 实际是模糊匹配。
    */
-  export interface ListParams {
+  export interface ListParams extends PageParams {
     /** 登录账号（模糊匹配） */
     userName?: string;
     /** 登录 IP（模糊匹配） */
     ipaddr?: string;
     /** 登录状态：0 成功、1 失败 */
     status?: Status;
-    /** 时间范围起点（含），需为 ISO 8601 字符串，后端直接交给 Prisma 过滤 DateTime */
+    /** 时间范围起点（含），可传本地日期时间或 ISO 8601 字符串 */
     startTime?: string;
-    /** 时间范围终点（含），需为 ISO 8601 字符串 */
+    /** 时间范围终点（含），可传本地日期时间或 ISO 8601 字符串 */
     endTime?: string;
-    /** 页码，从 1 开始 */
-    page?: number;
-    /** 每页数量 */
-    pageSize?: number;
   }
 
-  /**
-   * 列表返回体
-   *
-   * 注意不是通用的 `PageResult`：后端把 `records / total / page / pageSize`
-   * 平铺返回，没有 `meta` 包装。
-   */
-  export interface ListResult {
-    /** 当前页记录 */
-    records: LoginLog[];
-    /** 总记录数 */
-    total: number;
-    /** 当前页码 */
-    page: number;
-    /** 每页数量 */
-    pageSize: number;
-  }
+  export type ListResult = PageResult<LoginLog>;
 }
