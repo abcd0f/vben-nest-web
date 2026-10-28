@@ -64,9 +64,6 @@ const gridOptions: VxeTableGridOptions = {
   rowConfig: {
     keyField: 'operId',
   },
-  toolbarConfig: {
-    search: true,
-  },
 };
 
 const [Grid, gridApi] = useVbenVxeGrid<MonitorOperLogApi.OperLog>({

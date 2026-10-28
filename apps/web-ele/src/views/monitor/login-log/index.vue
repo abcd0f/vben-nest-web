@@ -64,9 +64,6 @@ const gridOptions: VxeTableGridOptions = {
   rowConfig: {
     keyField: 'infoId',
   },
-  toolbarConfig: {
-    search: true,
-  },
 };
 
 const [Grid, gridApi] = useVbenVxeGrid<MonitorLoginLogApi.LoginLog>({
