@@ -36,6 +36,7 @@ catalog:
   '@changesets/git': ^4.0.1
   '@clack/prompts': ^1.8.1
   '@ctrl/tinycolor': ^4.2.1
+  '@element-plus/icons-vue': ^2.3.2
   '@eslint-community/eslint-plugin-eslint-comments': ^4.8.1
   '@eslint/js': ^10.0.1
   '@iconify/json': ^2.2.546

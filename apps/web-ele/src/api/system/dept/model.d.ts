@@ -70,4 +70,20 @@ export namespace SystemDeptApi {
     /** 备注，最长 500 字符 */
     remark?: null | string;
   }
+
+  /**
+   * @description: 部门树
+   */
+  export interface DeptTree {
+    id: number | string;
+    /**
+     * antd组件必须要这个属性 实际是没有这个属性的
+     */
+    key: string;
+    parentId: number;
+    label: string;
+    weight: number;
+    disabled: boolean;
+    children?: DeptTree[];
+  }
 }

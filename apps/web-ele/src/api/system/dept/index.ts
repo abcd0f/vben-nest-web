@@ -53,3 +53,11 @@ export function updateDeptApi(
 export function deleteDeptApi(deptId: string) {
   return requestClient.delete<null>(`/system/dept/${deptId}`);
 }
+
+/**
+ * 获取部门树
+ * @returns 部门树数组
+ */
+export function getDeptTree() {
+  return requestClient.get<SystemDeptApi.DeptTree[]>('/system/dept/tree');
+}
