@@ -53,14 +53,11 @@ const gridOptions: VxeTableGridOptions = {
   proxyConfig: {
     ajax: {
       query: async ({ page }, formValues = {}) => {
-        const { timeRange, ...rest } = formValues;
-        const resp = await operLogListApi({
-          ...rest,
+        return operLogListApi({
           ...formValues,
           page: page.currentPage,
           pageSize: page.pageSize,
         });
-        return { items: resp.items, total: resp.meta.total };
       },
     },
   },
