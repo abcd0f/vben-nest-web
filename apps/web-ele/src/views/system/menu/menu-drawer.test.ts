@@ -20,6 +20,7 @@ const mocks = vi.hoisted(() => ({
     validate: vi.fn(),
   },
   create: vi.fn(),
+  confirmClose: vi.fn(),
   info: vi.fn(),
   list: vi.fn(),
   update: vi.fn(),
@@ -34,7 +35,7 @@ vi.mock('@vben/common-ui', () => ({
 vi.mock('@vben/locales', () => ({ $t: (value: string) => value }));
 vi.mock('element-plus', () => ({
   ElMessage: { success: vi.fn() },
-  ElMessageBox: { confirm: vi.fn() },
+  ElMessageBox: { confirm: mocks.confirmClose },
   ElSkeleton: { render: () => null },
 }));
 vi.mock('#/adapter/form', () => ({
@@ -77,7 +78,11 @@ describe('菜单抽屉', () => {
     const root = schema.componentProps.data[0];
     expect(root.menuId).toBe('0');
     expect(root.children[0].children[0].fullName).toBe('根菜单 / 系统 / 用户');
-    expect(root.children[0].children[0].children.map((item: { menuId: string }) => item.menuId)).toEqual(['4']);
+    expect(
+      root.children[0].children[0].children.map(
+        (item: { menuId: string }) => item.menuId,
+      ),
+    ).toEqual(['4']);
   });
 
   it('新增子级仅设置上级，不请求详情或重复回填默认值', async () => {
@@ -100,10 +105,22 @@ describe('菜单抽屉', () => {
   });
 
   it('从菜单切换为按钮后，提交清空路由字段且不修改表单值', async () => {
-    const values = { menuType: 'F', path: 'user', component: 'system/user/index', perms: 'system:user:add' };
+    const values = {
+      menuName: '新增用户',
+      parentId: '2',
+      orderNum: 1,
+      menuType: 'F',
+      path: 'user',
+      component: 'system/user/index',
+      perms: 'system:user:add',
+    };
     mocks.formApi.getValues.mockResolvedValue(values);
     await mocks.drawerOptions.onConfirm!();
-    expect(mocks.create).toHaveBeenCalledWith({ ...values, path: null, component: null });
+    expect(mocks.create).toHaveBeenCalledWith({
+      ...values,
+      path: null,
+      component: null,
+    });
     expect(values.path).toBe('user');
     expect(mocks.update).not.toHaveBeenCalled();
   });
@@ -112,7 +129,15 @@ describe('菜单抽屉', () => {
     mocks.drawerApi.getData.mockReturnValue({ id: '2', update: true });
     mocks.info.mockResolvedValue({ menuId: '2', parentId: '1' });
     await mocks.drawerOptions.onOpenChange!(true);
-    const values = { menuId: '2', menuType: 'M', perms: 'system:user:list' };
+    const values = {
+      menuId: '2',
+      parentId: '1',
+      menuName: '用户目录',
+      orderNum: 1,
+      path: 'user',
+      menuType: 'M',
+      perms: 'system:user:list',
+    };
     mocks.formApi.getValues.mockResolvedValue(values);
     await mocks.drawerOptions.onConfirm!();
     expect(mocks.update).toHaveBeenCalledWith({ ...values, perms: null });
@@ -141,5 +166,29 @@ describe('菜单抽屉', () => {
     await mocks.drawerOptions.onConfirm!();
     expect(mocks.drawerApi.close).not.toHaveBeenCalled();
     expect(mocks.drawerApi.lock).toHaveBeenLastCalledWith(false);
+  });
+
+  it('未修改时直接关闭，修改后取消放弃则保留表单', async () => {
+    await mocks.drawerOptions.onOpenChange!(true);
+    expect(await mocks.drawerOptions.onBeforeClose!()).toBe(true);
+    expect(mocks.confirmClose).not.toHaveBeenCalled();
+
+    mocks.formApi.getValues.mockResolvedValue({ menuName: '未保存的菜单' });
+    mocks.confirmClose.mockRejectedValueOnce('cancel');
+    expect(await mocks.drawerOptions.onBeforeClose!()).toBe(false);
+    expect(mocks.formApi.reset).not.toHaveBeenCalled();
+  });
+
+  it('关闭后重置表单，重新新增时不残留编辑详情', async () => {
+    mocks.drawerApi.getData.mockReturnValue({ id: '2', update: true });
+    mocks.info.mockResolvedValue({ menuId: '2', parentId: '1' });
+    await mocks.drawerOptions.onOpenChange!(true);
+    await mocks.drawerOptions.onClosed!();
+    expect(mocks.formApi.reset).toHaveBeenCalledOnce();
+
+    mocks.drawerApi.getData.mockReturnValue({ update: false });
+    mocks.formApi.setValues.mockClear();
+    await mocks.drawerOptions.onOpenChange!(true);
+    expect(mocks.formApi.setValues).not.toHaveBeenCalled();
   });
 });

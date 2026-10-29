@@ -3,9 +3,10 @@ import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { SystemMenuApi } from '#/api/system/menu/model';
 
-import { nextTick, ref } from 'vue';
+import { ref } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
+import { $t } from '@vben/locales';
 import { eachTree, listToTree } from '@vben/utils';
 
 import { ElButton, ElMessage, ElMessageBox } from 'element-plus';
@@ -16,7 +17,7 @@ import { deleteMenuApi, menuListApi } from '#/api/system/menu';
 import { columns, menuSearchFormSchema } from './data';
 import MenuDrawer from './menu-drawer.vue';
 
-const allExpanded = ref(true);
+const allExpanded = ref(false);
 
 const formOptions: VbenFormProps = {
   commonConfig: { componentProps: { clearable: true }, labelWidth: 80 },
@@ -34,7 +35,7 @@ const gridOptions: VxeGridProps = {
     ajax: {
       query: async (_, formValues = {}) => {
         const items = await menuListApi(formValues);
-        const treeData = listToTree(items, {
+        const treeData = listToTree<SystemMenuApi.Menu>(items, {
           id: 'menuId',
           pid: 'parentId',
         });
@@ -45,13 +46,15 @@ const gridOptions: VxeGridProps = {
       },
     },
   },
-  rowConfig: { keyField: 'menuId' },
+  rowConfig: { keyField: 'menuId', isCurrent: true },
   treeConfig: {
-    expandAll: true,
     parentField: 'parentId',
     rowField: 'menuId',
     hasChildField: 'hasChildren',
     transform: false,
+    reserve: true,
+    lazy: true,
+    loadMethod: ({ row }) => row.children ?? [],
   },
 };
 
@@ -66,32 +69,24 @@ const [Grid, gridApi] = useVbenVxeGrid<SystemMenuApi.Menu>({
 });
 
 const [Drawer, drawerApi] = useVbenDrawer<{
-  menuId?: string;
-  parentId?: string;
+  id?: string;
   update: boolean;
 }>({ connectedComponent: MenuDrawer });
 
 function handleCreate(parentId?: string) {
-  drawerApi.setData({ parentId, update: false });
+  drawerApi.setData({ id: parentId, update: false });
   drawerApi.open();
 }
 
-function handleCreateChild(row: SystemMenuApi.Menu) {
-  if (row.menuType === 'F') {
-    return;
-  }
-  handleCreate(row.menuId);
-}
-
 function handleEdit(row: SystemMenuApi.Menu) {
-  drawerApi.setData({ menuId: row.menuId, update: true });
+  drawerApi.setData({ id: row.menuId, update: true });
   drawerApi.open();
 }
 
 async function handleDelete(row: SystemMenuApi.Menu) {
   try {
     await ElMessageBox.confirm(
-      `确认删除菜单「${row.menuName}」？后端会拒绝删除仍有子菜单或角色授权的节点。`,
+      `确认删除菜单「${$t(row.menuName)}」？`,
       '删除确认',
       { cancelButtonText: '取消', confirmButtonText: '确定', type: 'warning' },
     );
@@ -112,8 +107,6 @@ async function toggleExpandAll() {
 
 async function handleReload() {
   await gridApi.query();
-  await nextTick();
-  await gridApi.grid?.setAllTreeExpand(allExpanded.value);
 }
 </script>
 
@@ -138,7 +131,7 @@ async function handleReload() {
           v-access:code="['system:menu:add']"
           link
           type="primary"
-          @click="handleCreateChild(row)"
+          @click="handleCreate(row.menuId)"
         >
           新增子级
         </ElButton>

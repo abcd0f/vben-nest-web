@@ -5,7 +5,9 @@ export namespace SystemMenuApi {
   export type MenuType = 'C' | 'F' | 'M';
 
   export interface Menu {
+    /** 后端 BigInt ID 序列化为十进制字符串。 */
     menuId: string;
+    /** 根菜单固定为 "0"。 */
     parentId: string;
     menuName: string;
     menuType: MenuType;
@@ -50,5 +52,6 @@ export namespace SystemMenuApi {
     remark?: null | string;
   }
 
+  /** PUT 提交完整菜单，必填字段与新增一致，并包含菜单 ID。 */
   export type UpdateParams = Omit<CreateParams, 'menuId'> & { menuId: string };
 }

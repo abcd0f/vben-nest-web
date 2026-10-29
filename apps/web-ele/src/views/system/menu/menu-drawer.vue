@@ -4,6 +4,10 @@ import type { SystemMenuApi } from '#/api/system/menu/model';
 import { computed, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
+import { $t } from '@vben/locales';
+import { addFullName, cloneDeep, filterTree, listToTree } from '@vben/utils';
+
+import { ElMessage, ElSkeleton } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
 import {
@@ -12,101 +16,132 @@ import {
   menuListApi,
   updateMenuApi,
 } from '#/api/system/menu';
+import { defaultFormValueGetter, useBeforeCloseDiff } from '#/utils/popup';
 
 import { menuFormSchema } from './data';
 
-const emit = defineEmits<{ reload: [] }>();
-
 interface DrawerData {
-  menuId?: string;
-  parentId?: string;
-  update: boolean;
+  /** 新增子级时为上级 ID，编辑时为当前菜单 ID。 */
+  id?: string;
+  update?: boolean;
 }
 
-interface MenuOption {
-  children?: MenuOption[];
-  label: string;
-  value: string;
-}
-
+const emit = defineEmits<{ reload: [] }>();
 const isUpdate = ref(false);
-const currentMenuId = ref<string>();
-const currentIcon = ref<null | string>(null);
+const loading = ref(false);
 const title = computed(() => (isUpdate.value ? '编辑菜单' : '新增菜单'));
 
-const [Form, formApi] = useVbenForm({
-  commonConfig: { componentProps: { class: 'w-full' } },
+const [Form, formApi] = useVbenForm<SystemMenuApi.CreateParams>({
+  commonConfig: {
+    componentProps: { class: 'w-full' },
+    labelWidth: 120,
+  },
   schema: menuFormSchema(),
   showDefaultActions: false,
   wrapperClass: 'grid-cols-1',
 });
 
-function buildOptions(
-  list: SystemMenuApi.Menu[],
-  exclude: Set<string>,
-): MenuOption[] {
-  const childrenOf = new Map<string, SystemMenuApi.Menu[]>();
-  for (const item of list.filter((menu) => menu.menuType !== 'F')) {
-    const children = childrenOf.get(item.parentId) ?? [];
-    children.push(item);
-    childrenOf.set(item.parentId, children);
-  }
+async function setupMenuSelect(excludeId?: string) {
+  const list = await menuListApi();
+  list.forEach((item) => {
+    item.menuName = $t(item.menuName);
+  });
+  const tree = listToTree<SystemMenuApi.Menu>(
+    list.filter((item) => item.menuType !== 'F'),
+    { id: 'menuId', pid: 'parentId' },
+  );
+  const fullMenuTree = [
+    {
+      menuId: '0',
+      menuName: '根菜单',
+      // 建树后过滤会移除整个分支，避免将菜单挂到自身或后代下。
+      children: filterTree(tree, (item) => item.menuId !== excludeId),
+    },
+  ];
+  addFullName(fullMenuTree, 'menuName', ' / ');
 
-  const build = (parentId: string): MenuOption[] =>
-    (childrenOf.get(parentId) ?? [])
-      .filter((item) => !exclude.has(item.menuId))
-      .map((item) => ({
-        children: build(item.menuId),
-        label: item.menuName,
-        value: item.menuId,
-      }));
-
-  return [{ children: build('0'), label: '根菜单', value: '0' }];
+  formApi.updateSchema([
+    {
+      componentProps: {
+        data: fullMenuTree,
+        filterNodeMethod(query: string, data: { menuName?: string }) {
+          return !query || (data.menuName ?? '').includes(query);
+        },
+        nodeKey: 'menuId',
+        props: { children: 'children', label: 'fullName', value: 'menuId' },
+      },
+      fieldName: 'parentId',
+      renderComponentContent: () => ({
+        default: ({ data }: { data: { menuName: string } }) => data.menuName,
+      }),
+    },
+  ]);
 }
 
-function collectDescendants(list: SystemMenuApi.Menu[], menuId: string) {
-  const exclude = new Set<string>([menuId]);
-  let changed = true;
-  while (changed) {
-    changed = false;
-    for (const item of list) {
-      if (exclude.has(item.parentId) && !exclude.has(item.menuId)) {
-        exclude.add(item.menuId);
-        changed = true;
-      }
+const { onBeforeClose, markInitialized, resetInitialized } = useBeforeCloseDiff(
+  {
+    initializedGetter: defaultFormValueGetter(formApi),
+    currentGetter: defaultFormValueGetter(formApi),
+  },
+);
+
+const [Drawer, drawerApi] = useVbenDrawer<DrawerData>({
+  onBeforeClose,
+  onClosed: handleClosed,
+  onConfirm: handleConfirm,
+  async onOpenChange(isOpen) {
+    if (!isOpen) {
+      return;
     }
-  }
-  return exclude;
-}
+    drawerApi.lock(true);
+    loading.value = true;
+    try {
+      const { id, update = false } = drawerApi.getData() ?? {};
+      isUpdate.value = update;
+      if (id) {
+        await formApi.setFieldValue('parentId', id);
+      }
+      const [record] = await Promise.all([
+        id && update ? menuInfoApi(id) : null,
+        setupMenuSelect(update ? id : undefined),
+      ]);
+      if (record) {
+        await formApi.setValues(record);
+      }
+      await markInitialized();
+    } catch (error) {
+      console.error('[system/menu] 加载菜单失败', error);
+      await drawerApi.close();
+    } finally {
+      drawerApi.lock(false);
+      loading.value = false;
+    }
+  },
+});
 
 async function handleConfirm() {
-  const { valid } = await formApi.validate();
-  if (!valid) {
-    return;
-  }
-
-  drawerApi.lock(true);
   try {
-    const values = (await formApi.getValues()) as SystemMenuApi.CreateParams;
-    const menuType = values.menuType;
-    const payload: SystemMenuApi.CreateParams = {
-      ...values,
-      menuType,
-      menuName: values.menuName.trim(),
-      path: menuType === 'F' ? null : values.path?.trim() || null,
-      component: menuType === 'C' ? values.component?.trim() || null : null,
-      query: values.query?.trim() || null,
-      perms: menuType === 'M' ? null : values.perms?.trim() || null,
-      icon: currentIcon.value,
-      remark: values.remark?.trim() || null,
-    };
-    if (isUpdate.value && currentMenuId.value) {
-      await updateMenuApi({ ...payload, menuId: currentMenuId.value });
-    } else {
-      await createMenuApi(payload);
+    drawerApi.lock(true);
+    const { valid } = await formApi.validate();
+    if (!valid) {
+      return;
     }
+    const data = cloneDeep(await formApi.getValues());
+    // 后端按菜单类型校验字段；类型切换后显式清空不再适用的值。
+    if (data.menuType === 'F') {
+      data.path = null;
+      data.component = null;
+    }
+    if (data.menuType === 'M') {
+      data.perms = null;
+    }
+    await (isUpdate.value
+      ? updateMenuApi(data as SystemMenuApi.UpdateParams)
+      : createMenuApi(data));
+    ElMessage.success(isUpdate.value ? '修改成功' : '新增成功');
+    resetInitialized();
     emit('reload');
-    drawerApi.close();
+    await drawerApi.close();
   } catch (error) {
     console.error('[system/menu] 保存菜单失败', error);
   } finally {
@@ -114,76 +149,15 @@ async function handleConfirm() {
   }
 }
 
-function handleClosed() {
-  formApi.reset();
+async function handleClosed() {
+  await formApi.reset();
+  resetInitialized();
 }
-
-const [Drawer, drawerApi] = useVbenDrawer({
-  onClosed: handleClosed,
-  onConfirm: handleConfirm,
-  async onOpenChange(isOpen) {
-    if (!isOpen) {
-      return;
-    }
-    const { menuId, parentId, update } = (drawerApi.getData() ??
-      {}) as DrawerData;
-    isUpdate.value = !!update;
-    currentMenuId.value = menuId;
-    drawerApi.lock(true);
-    try {
-      const list = await menuListApi();
-      formApi.updateSchema([
-        {
-          componentProps: {
-            data: buildOptions(
-              list,
-              menuId ? collectDescendants(list, menuId) : new Set(),
-            ),
-          },
-          fieldName: 'parentId',
-        },
-      ]);
-      if (menuId && isUpdate.value) {
-        const detail = await menuInfoApi(menuId);
-        currentIcon.value = detail.icon ?? null;
-        await formApi.setValues({
-          ...detail,
-          parentId: detail.parentId,
-          path: detail.path ?? '',
-          component: detail.component ?? '',
-          query: detail.query ?? '',
-          perms: detail.perms ?? '',
-          remark: detail.remark ?? '',
-        });
-      } else {
-        currentIcon.value = null;
-        await formApi.setValues({
-          component: '',
-          isCache: '0',
-          isFrame: '1',
-          menuName: '',
-          menuType: 'M',
-          orderNum: 0,
-          parentId: parentId ?? '0',
-          path: '',
-          perms: '',
-          query: '',
-          remark: '',
-          status: '0',
-          visible: '0',
-        });
-      }
-    } catch (error) {
-      console.error('[system/menu] 初始化菜单表单失败', error);
-    } finally {
-      drawerApi.lock(false);
-    }
-  },
-});
 </script>
 
 <template>
   <Drawer :title="title" class="w-[600px]">
-    <Form />
+    <ElSkeleton v-if="loading" animated />
+    <Form v-show="!loading" />
   </Drawer>
 </template>
