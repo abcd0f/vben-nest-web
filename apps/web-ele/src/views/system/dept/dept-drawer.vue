@@ -122,7 +122,7 @@ async function handleConfirm() {
   drawerApi.lock(true);
   try {
     await (updatingId
-      ? updateDeptApi(updatingId, payload)
+      ? updateDeptApi({ ...payload, deptId: updatingId })
       : createDeptApi(payload));
     emit('reload');
     drawerApi.close();

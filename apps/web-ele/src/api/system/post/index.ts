@@ -16,11 +16,8 @@ export function createPostApi(data: SystemPostApi.CreateParams) {
   return requestClient.post<SystemPostApi.Post>('/system/post', data);
 }
 
-export function updatePostApi(
-  postId: string,
-  data: SystemPostApi.UpdateParams,
-) {
-  return requestClient.put<SystemPostApi.Post>(`/system/post/${postId}`, data);
+export function updatePostApi(data: SystemPostApi.UpdateParams) {
+  return requestClient.put<SystemPostApi.Post>('/system/post', data);
 }
 
 export function deletePostApi(postId: string) {

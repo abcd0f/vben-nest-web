@@ -56,20 +56,12 @@ export namespace SystemDeptApi {
    *
    * 所有字段可选，只更新传入的字段；未传字段保持原值，`remark` 传 null 表示清空。
    */
-  export interface UpdateParams {
+  export type UpdateParams = Partial<Omit<CreateParams, 'parentId'>> & {
+    /** 部门 ID */
+    deptId: string;
     /** 父部门 ID，不能指向自身或自身的后代，否则形成环 */
     parentId?: string;
-    /** 部门名称，最长 64 字符 */
-    deptName?: string;
-    /** 显示顺序 */
-    orderNum?: number;
-    /** 负责人用户 ID（十进制字符串） */
-    leaderId?: string;
-    /** 部门状态：0 启用、1 停用 */
-    status?: Status;
-    /** 备注，最长 500 字符 */
-    remark?: null | string;
-  }
+  };
 
   /**
    * @description: 部门树

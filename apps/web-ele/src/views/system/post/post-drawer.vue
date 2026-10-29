@@ -79,7 +79,7 @@ async function handleConfirm() {
     };
 
     isUpdate.value && currentPostId.value
-      ? await updatePostApi(currentPostId.value, payload)
+      ? await updatePostApi({ ...payload, postId: currentPostId.value })
       : await createPostApi(payload);
 
     emit('reload');

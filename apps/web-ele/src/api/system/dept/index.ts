@@ -33,15 +33,11 @@ export function createDeptApi(data: SystemDeptApi.CreateParams) {
 
 /**
  * 更新部门
- * @param deptId 部门ID（十进制字符串）
- * @param data 更新参数，仅提交需要变更的字段
+ * @param data 更新参数，必须包含部门 ID
  * @returns 更新后的部门
  */
-export function updateDeptApi(
-  deptId: string,
-  data: SystemDeptApi.UpdateParams,
-) {
-  return requestClient.put<SystemDeptApi.Dept>(`/system/dept/${deptId}`, data);
+export function updateDeptApi(data: SystemDeptApi.UpdateParams) {
+  return requestClient.put<SystemDeptApi.Dept>('/system/dept', data);
 }
 
 /**

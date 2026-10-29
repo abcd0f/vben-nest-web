@@ -34,5 +34,5 @@ export namespace SystemPostApi {
     remark?: null | string;
   }
 
-  export type UpdateParams = Partial<CreateParams>;
+  export type UpdateParams = Partial<CreateParams> & { postId: string };
 }
