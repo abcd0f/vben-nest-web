@@ -18,6 +18,7 @@ const SvgWeChatIcon = createIconifyIcon('svg:wechat');
 const SvgDingDingIcon = createIconifyIcon('svg:dingding');
 const SvgTDesignIcon = createIconifyIcon('svg:tdesign-logo');
 const SvgAntdvNextLogoIcon = createIconifyIcon('svg:antdv-next-logo');
+const SvgWoridClock = createIconifyIcon('svg:world-clock');
 
 export {
   SvgAntdvLogoIcon,
@@ -36,4 +37,5 @@ export {
   SvgQQChatIcon,
   SvgTDesignIcon,
   SvgWeChatIcon,
+  SvgWoridClock,
 };

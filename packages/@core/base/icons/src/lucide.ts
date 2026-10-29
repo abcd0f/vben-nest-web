@@ -90,6 +90,7 @@ export {
   Underline,
   Undo2,
   Unlink2,
+  User,
   UserRoundPen,
   X,
 } from '@lucide/vue';

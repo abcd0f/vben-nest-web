@@ -12,13 +12,13 @@ import { computed, onUnmounted, ref, useTemplateRef, watch } from 'vue';
 import { onSupportLanguagesChange } from '@vben/constants';
 import { useHoverToggle, useRefresh } from '@vben/hooks';
 import {
-  createIconifyIcon,
   Languages,
   LockKeyhole,
   LogOut,
   RotateCw,
   Search,
   Settings,
+  SvgWoridClock,
 } from '@vben/icons';
 import { $t, loadLocaleMessages } from '@vben/locales';
 import {
@@ -139,7 +139,6 @@ const refGlobalSearch = useTemplateRef('refGlobalSearch');
 const refTimezone = useTemplateRef('refTimezone');
 const refNotification = useTemplateRef('refNotification');
 
-const TimezoneIcon = createIconifyIcon('fluent-mdl2:world-clock');
 const [openPopover, hoverWatcher] = useHoverToggle(
   [refTrigger, refContent],
   () => props.hoverDelay,
@@ -528,7 +527,7 @@ if (preferences.shortcutKeys.enable) {
             @select="handleTimezoneSelect"
           >
             <VbenIconButton class="mr-2" @click="handleTimezoneSelect">
-              <TimezoneIcon class="size-4" />
+              <SvgWoridClock />
             </VbenIconButton>
             {{ $t('ui.widgets.timezone.setTimezone') }}
           </DropdownMenuItem>
