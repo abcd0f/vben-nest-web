@@ -1,32 +1,26 @@
 <script lang="ts" setup>
-import type { VbenFormProps } from '#/adapter/form';
 import type { VxeGridProps } from '#/adapter/vxe-table';
 import type { SystemMenuApi } from '#/api/system/menu/model';
 
 import { ref } from 'vue';
 
 import { Page, useVbenDrawer } from '@vben/common-ui';
+import { IconifyIcon } from '@vben/icons';
 import { $t } from '@vben/locales';
 import { eachTree, listToTree } from '@vben/utils';
 
-import { ElButton, ElMessage, ElMessageBox } from 'element-plus';
+import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus';
 
 import { useVbenVxeGrid } from '#/adapter/vxe-table';
 import { deleteMenuApi, menuListApi } from '#/api/system/menu';
 
-import { columns, menuSearchFormSchema } from './data';
+import { useColumns } from './data';
 import MenuDrawer from './menu-drawer.vue';
 
 const allExpanded = ref(false);
 
-const formOptions: VbenFormProps = {
-  commonConfig: { componentProps: { clearable: true }, labelWidth: 80 },
-  schema: menuSearchFormSchema(),
-  wrapperClass: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
-};
-
 const gridOptions: VxeGridProps = {
-  columns,
+  columns: useColumns(),
   height: 'auto',
   id: 'system-menu-index',
   keepSource: true,
@@ -59,7 +53,6 @@ const gridOptions: VxeGridProps = {
 };
 
 const [Grid, gridApi] = useVbenVxeGrid<SystemMenuApi.Menu>({
-  formOptions,
   gridEvents: {
     cellDblclick: ({ row }: { row: SystemMenuApi.Menu }) => {
       gridApi.grid?.toggleTreeExpand(row);
@@ -108,6 +101,24 @@ async function toggleExpandAll() {
 async function handleReload() {
   await gridApi.query();
 }
+
+function badgeTagType(variant?: string) {
+  if (variant === 'destructive') return 'danger';
+  if (variant === 'success' || variant === 'warning' || variant === 'primary')
+    return variant;
+  return 'info';
+}
+
+function badgeColor(variant?: string) {
+  return (
+    {
+      destructive: 'bg-destructive',
+      primary: 'bg-primary',
+      success: 'bg-success',
+      warning: 'bg-warning',
+    }[variant ?? ''] ?? 'bg-primary'
+  );
+}
 </script>
 
 <template>
@@ -125,15 +136,43 @@ async function handleReload() {
           新增菜单
         </ElButton>
       </template>
+      <template #title="{ row }">
+        <div class="flex items-center gap-2">
+          <IconifyIcon
+            class="size-4 shrink-0"
+            :icon="
+              row.menuType === 'F'
+                ? 'lucide:shield-check'
+                : row.icon && row.icon !== '#'
+                  ? row.icon
+                  : 'lucide:circle-dashed'
+            "
+          />
+          <span class="truncate">{{ $t(row.menuName) }}</span>
+          <span
+            v-if="row.meta?.badgeType === 'dot'"
+            class="ml-auto size-2 shrink-0 rounded-full"
+            :class="badgeColor(row.meta.badgeVariants)"
+          ></span>
+          <ElTag
+            v-else-if="row.meta?.badgeType === 'normal' && row.meta.badge"
+            size="small"
+            class="ml-auto shrink-0"
+            :type="badgeTagType(row.meta.badgeVariants)"
+          >
+            {{ row.meta.badge }}
+          </ElTag>
+        </div>
+      </template>
       <template #action="{ row }">
         <ElButton
-          v-if="row.menuType !== 'F'"
+          v-if="['M', 'C'].includes(row.menuType) && row.isFrame !== '0'"
           v-access:code="['system:menu:add']"
           link
           type="primary"
           @click="handleCreate(row.menuId)"
         >
-          新增子级
+          新增下级
         </ElButton>
         <ElButton
           v-access:code="['system:menu:edit']"

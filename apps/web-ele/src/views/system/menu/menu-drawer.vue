@@ -1,12 +1,15 @@
 <script lang="ts" setup>
+import type { MenuFormValues } from './menu-form';
+
 import type { SystemMenuApi } from '#/api/system/menu/model';
 
 import { computed, ref } from 'vue';
 
 import { useVbenDrawer } from '@vben/common-ui';
 import { $t } from '@vben/locales';
-import { addFullName, cloneDeep, filterTree, listToTree } from '@vben/utils';
+import { addFullName, filterTree, listToTree } from '@vben/utils';
 
+import { breakpointsTailwind, useBreakpoints } from '@vueuse/core';
 import { ElMessage, ElSkeleton } from 'element-plus';
 
 import { useVbenForm } from '#/adapter/form';
@@ -19,6 +22,7 @@ import {
 import { defaultFormValueGetter, useBeforeCloseDiff } from '#/utils/popup';
 
 import { menuFormSchema } from './data';
+import { decodeMenuForm, encodeMenuForm } from './menu-form';
 
 interface DrawerData {
   /** 新增子级时为上级 ID，编辑时为当前菜单 ID。 */
@@ -29,16 +33,19 @@ interface DrawerData {
 const emit = defineEmits<{ reload: [] }>();
 const isUpdate = ref(false);
 const loading = ref(false);
+const isHorizontal = useBreakpoints(breakpointsTailwind).greaterOrEqual('md');
 const title = computed(() => (isUpdate.value ? '编辑菜单' : '新增菜单'));
 
-const [Form, formApi] = useVbenForm<SystemMenuApi.CreateParams>({
+const [Form, formApi] = useVbenForm<MenuFormValues>({
   commonConfig: {
     componentProps: { class: 'w-full' },
     labelWidth: 120,
+    labelClass: 'whitespace-nowrap',
+    formItemClass: 'col-span-2 md:col-span-1',
   },
   schema: menuFormSchema(),
   showDefaultActions: false,
-  wrapperClass: 'grid-cols-1',
+  wrapperClass: 'grid-cols-2 gap-x-4',
 });
 
 async function setupMenuSelect(excludeId?: string) {
@@ -47,7 +54,9 @@ async function setupMenuSelect(excludeId?: string) {
     item.menuName = $t(item.menuName);
   });
   const tree = listToTree<SystemMenuApi.Menu>(
-    list.filter((item) => item.menuType !== 'F'),
+    list.filter(
+      (item) => ['C', 'M'].includes(item.menuType) && item.isFrame !== '0',
+    ),
     { id: 'menuId', pid: 'parentId' },
   );
   const fullMenuTree = [
@@ -106,7 +115,7 @@ const [Drawer, drawerApi] = useVbenDrawer<DrawerData>({
         setupMenuSelect(update ? id : undefined),
       ]);
       if (record) {
-        await formApi.setValues(record);
+        await formApi.setValues(decodeMenuForm(record));
       }
       await markInitialized();
     } catch (error) {
@@ -126,15 +135,7 @@ async function handleConfirm() {
     if (!valid) {
       return;
     }
-    const data = cloneDeep(await formApi.getValues());
-    // 后端按菜单类型校验字段；类型切换后显式清空不再适用的值。
-    if (data.menuType === 'F') {
-      data.path = null;
-      data.component = null;
-    }
-    if (data.menuType === 'M') {
-      data.perms = null;
-    }
+    const data = encodeMenuForm(await formApi.getValues());
     await (isUpdate.value
       ? updateMenuApi(data as SystemMenuApi.UpdateParams)
       : createMenuApi(data));
@@ -156,8 +157,11 @@ async function handleClosed() {
 </script>
 
 <template>
-  <Drawer :title="title" class="w-[600px]">
+  <Drawer :title="title" class="w-full max-w-[800px]">
     <ElSkeleton v-if="loading" animated />
-    <Form v-show="!loading" />
+    <Form
+      v-show="!loading"
+      :layout="isHorizontal ? 'horizontal' : 'vertical'"
+    />
   </Drawer>
 </template>

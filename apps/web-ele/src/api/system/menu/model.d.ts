@@ -2,7 +2,26 @@ import type { Status } from '#/api/common';
 
 /** 菜单接口，与 nest-claude system/menu DTO 对应。 */
 export namespace SystemMenuApi {
-  export type MenuType = 'C' | 'F' | 'M';
+  export type MenuType = 'C' | 'E' | 'F' | 'L' | 'M';
+
+  export interface MenuMeta {
+    activeIcon?: string;
+    activePath?: string;
+    affixTab?: boolean;
+    badge?: string;
+    badgeType?: 'dot' | 'normal';
+    badgeVariants?:
+      | 'default'
+      | 'destructive'
+      | 'primary'
+      | 'success'
+      | 'warning';
+    hideChildrenInMenu?: boolean;
+    hideInBreadcrumb?: boolean;
+    hideInTab?: boolean;
+    iframeSrc?: string;
+    link?: string;
+  }
 
   export interface Menu {
     /** 后端 BigInt ID 序列化为十进制字符串。 */
@@ -10,6 +29,8 @@ export namespace SystemMenuApi {
     /** 根菜单固定为 "0"。 */
     parentId: string;
     menuName: string;
+    routeName?: null | string;
+    meta?: MenuMeta;
     menuType: MenuType;
     orderNum: number;
     path?: null | string;
@@ -38,6 +59,8 @@ export namespace SystemMenuApi {
     menuId?: string;
     parentId: string;
     menuName: string;
+    routeName?: null | string;
+    meta?: MenuMeta;
     menuType: MenuType;
     orderNum: number;
     path?: null | string;

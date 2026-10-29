@@ -1,146 +1,105 @@
+import type { MenuFormValues } from './menu-form';
+
 import type { VbenFormSchema } from '#/adapter/form';
-import type { VxeGridProps } from '#/adapter/vxe-table';
+import type { VxeTableGridColumns } from '#/adapter/vxe-table';
 import type { SystemMenuApi } from '#/api/system/menu/model';
 
-import { h } from 'vue';
-
-import { IconifyIcon } from '@vben/icons';
-import { $t } from '@vben/locales';
-
-import { ElTag } from 'element-plus';
+import { $t, $te } from '@vben/locales';
 
 import { z } from '#/adapter/form';
 
 export const MENU_TYPE_OPTIONS = [
-  { label: '目录', value: 'M' },
-  { label: '菜单', value: 'C' },
-  { label: '按钮', value: 'F' },
+  { label: '目录', value: 'M', type: 'info' },
+  { label: '菜单', value: 'C', type: 'info' },
+  { label: '按钮', value: 'F', type: 'danger' },
+  { label: '内嵌', value: 'E', type: 'success' },
+  { label: '外链', value: 'L', type: 'warning' },
 ];
 
-export const MENU_STATUS_OPTIONS = [
-  { label: '启用', value: '0' },
-  { label: '停用', value: '1' },
-];
-
-export const MENU_VISIBLE_OPTIONS = [
-  { label: '显示', value: '0' },
-  { label: '隐藏', value: '1' },
-];
-
-export const MENU_FRAME_OPTIONS = [
-  { label: '否', value: '1' },
-  { label: '是', value: '0' },
-];
-
-export const MENU_CACHE_OPTIONS = [
-  { label: '是', value: '0' },
-  { label: '否', value: '1' },
-];
-
-export const columns: VxeGridProps['columns'] = [
-  {
-    field: 'menuName',
-    minWidth: 220,
-    title: '菜单名称',
-    treeNode: true,
-    align: 'left',
-    slots: {
-      default: ({ row }: { row: SystemMenuApi.Menu }) => $t(row.menuName),
-    },
-  },
-  {
-    field: 'icon',
-    title: '图标',
-    width: 80,
-    slots: {
-      default: ({ row }: { row: SystemMenuApi.Menu }) =>
-        row.icon && row.icon !== '#'
-          ? h('span', { class: 'flex justify-center' }, [
-              h(IconifyIcon, { icon: row.icon }),
-            ])
-          : '',
-    },
-  },
-  { field: 'orderNum', title: '排序', width: 80 },
-  {
-    field: 'menuType',
-    title: '类型',
-    width: 90,
-    slots: {
-      default: ({ row }: { row: SystemMenuApi.Menu }) =>
-        h(ElTag, { type: row.menuType === 'F' ? 'warning' : 'info' }, () =>
-          row.menuType === 'M'
-            ? '目录'
-            : row.menuType === 'C'
-              ? '菜单'
-              : '按钮',
-        ),
-    },
-  },
-  { field: 'perms', title: '权限标识', minWidth: 180 },
-  { field: 'component', title: '组件路径', minWidth: 180 },
-  {
-    field: 'status',
-    title: '状态',
-    width: 90,
-    slots: {
-      default: ({ row }: { row: SystemMenuApi.Menu }) =>
-        h(ElTag, { type: row.status === '0' ? 'success' : 'danger' }, () =>
-          row.status === '0' ? '启用' : '停用',
-        ),
-    },
-  },
-  {
-    field: 'visible',
-    title: '显示',
-    width: 90,
-    slots: {
-      default: ({ row }: { row: SystemMenuApi.Menu }) =>
-        h(ElTag, { type: row.visible === '0' ? 'success' : 'info' }, () =>
-          row.visible === '0' ? '显示' : '隐藏',
-        ),
-    },
-  },
-  { field: 'createTime', title: '创建时间', minWidth: 170 },
-  {
-    field: 'action',
-    fixed: 'right',
-    resizable: false,
-    slots: { default: 'action' },
-    title: '操作',
-    width: 220,
-  },
-];
-
-export function menuSearchFormSchema(): VbenFormSchema[] {
+export function useColumns(): VxeTableGridColumns<SystemMenuApi.Menu> {
   return [
     {
-      component: 'Input',
-      componentProps: { clearable: true, placeholder: '输入菜单名称' },
-      fieldName: 'menuName',
-      label: '菜单名称',
+      field: 'menuName',
+      title: '菜单标题',
+      fixed: 'left',
+      width: 250,
+      treeNode: true,
+      align: 'left',
+      slots: { default: 'title' },
     },
     {
-      component: 'Select',
-      componentProps: { clearable: true, options: MENU_STATUS_OPTIONS },
-      fieldName: 'status',
-      label: '菜单状态',
+      field: 'menuType',
+      title: '类型',
+      width: 90,
+      cellRender: { name: 'CellTag', props: { options: MENU_TYPE_OPTIONS } },
+    },
+    { field: 'perms', title: '权限标识', width: 200, align: 'left' },
+    { field: 'path', title: '路由地址', width: 200, align: 'left' },
+    {
+      field: 'component',
+      title: '组件',
+      minWidth: 220,
+      align: 'left',
+      formatter: ({ row }: { row: SystemMenuApi.Menu }) => {
+        if (row.isFrame === '0') return row.path ?? '';
+        if (row.menuType === 'E') return row.meta?.iframeSrc ?? '';
+        if (row.menuType === 'L') return row.meta?.link ?? '';
+        return row.component ?? '';
+      },
     },
     {
-      component: 'Select',
-      componentProps: { clearable: true, options: MENU_VISIBLE_OPTIONS },
-      fieldName: 'visible',
-      label: '显示状态',
+      field: 'status',
+      title: '状态',
+      width: 90,
+      cellRender: {
+        name: 'CellTag',
+        props: {
+          options: [
+            { label: '启用', value: '0', type: 'success' },
+            { label: '停用', value: '1', type: 'danger' },
+          ],
+        },
+      },
+    },
+    {
+      field: 'action',
+      fixed: 'right',
+      resizable: false,
+      slots: { default: 'action' },
+      title: '操作',
+      width: 220,
     },
   ];
 }
+function showFor(...types: SystemMenuApi.MenuType[]) {
+  return {
+    triggerFields: ['menuType'],
+    show: (values: Partial<MenuFormValues>) =>
+      !!values.menuType && types.includes(values.menuType),
+  };
+}
 
-export function menuFormSchema(): VbenFormSchema<SystemMenuApi.CreateParams>[] {
+export function menuFormSchema(): VbenFormSchema<MenuFormValues>[] {
   return [
+    { component: 'Input', fieldName: 'menuId', hide: true },
+    { component: 'Input', fieldName: 'query', hide: true },
+    { component: 'Input', fieldName: 'remark', hide: true },
+    {
+      component: 'RadioGroup',
+      componentProps: { isButton: true, options: MENU_TYPE_OPTIONS },
+      defaultValue: 'C',
+      fieldName: 'menuType',
+      label: '菜单类型',
+      rules: 'required',
+      formItemClass: 'col-span-2 md:col-span-2',
+    },
     {
       component: 'Input',
-      fieldName: 'menuId',
-      hide: true,
+      componentProps: { maxlength: 100, placeholder: '如 SystemMenu' },
+      fieldName: 'routeName',
+      label: '菜单名称',
+      help: '路由的唯一名称',
+      rules: z.string().trim().min(2, '至少输入 2 个字符').max(100),
     },
     {
       component: 'TreeSelect',
@@ -148,7 +107,6 @@ export function menuFormSchema(): VbenFormSchema<SystemMenuApi.CreateParams>[] {
         checkStrictly: true,
         defaultExpandAll: true,
         filterable: true,
-        placeholder: '请选择上级菜单',
         renderAfterExpand: false,
       },
       defaultValue: '0',
@@ -157,206 +115,220 @@ export function menuFormSchema(): VbenFormSchema<SystemMenuApi.CreateParams>[] {
       rules: 'selectRequired',
     },
     {
-      component: 'RadioGroup',
-      componentProps: { isButton: true, options: MENU_TYPE_OPTIONS },
-      defaultValue: 'M',
-      dependencies: {
-        triggerFields: ['menuType'],
-        resolve: ({ actions }) => {
-          Object.keys(actions.errors).forEach((key) => {
-            actions.setFieldError(key, undefined);
-          });
-          return {};
-        },
-      },
-      fieldName: 'menuType',
-      label: '菜单类型',
-      rules: 'required',
-    },
-    {
       component: 'Input',
-      componentProps: { maxlength: 100, placeholder: '如 lucide:menu' },
-      dependencies: {
-        triggerFields: ['menuType', 'icon'],
-        resolve: ({ values }) => ({
-          show: values.menuType !== 'F',
-          renderComponentContent: {
-            prepend: () =>
-              values.icon && values.icon !== '#'
-                ? h(IconifyIcon, { icon: values.icon })
-                : null,
-            append: () =>
-              h(
-                'a',
-                {
-                  href: 'https://icon-sets.iconify.design/',
-                  target: '_blank',
-                  rel: 'noopener noreferrer',
-                },
-                '搜索图标',
-              ),
-          },
-        }),
-      },
-      fieldName: 'icon',
-      label: '菜单图标',
-      help: '搜索 Iconify 图标并粘贴图标名称',
-    },
-    {
-      component: 'Input',
-      componentProps: { maxlength: 64, placeholder: '请输入菜单名称' },
+      componentProps: { maxlength: 64, placeholder: '支持国际化键名' },
+      fieldName: 'menuName',
+      label: '菜单标题',
       dependencies: {
         triggerFields: ['menuName'],
         resolve: ({ values }) => ({
-          renderComponentContent: {
-            append: () =>
-              h(
-                'span',
-                { class: 'text-muted-foreground text-sm' },
-                values.menuName ? $t(values.menuName) : '',
-              ),
-          },
+          renderComponentContent:
+            values.menuName && $te(values.menuName)
+              ? { append: () => $t(values.menuName) }
+              : {},
         }),
       },
-      fieldName: 'menuName',
-      label: '菜单名称',
-      help: '支持国际化键名',
-      rules: z.string().trim().min(1, '请输入菜单名称').max(64),
+      rules: z.string().trim().min(1, '请输入菜单标题').max(64),
+    },
+    {
+      component: 'Input',
+      componentProps: { maxlength: 200, placeholder: '如 /system/menu' },
+      fieldName: 'path',
+      label: '路由地址',
+      dependencies: {
+        ...showFor('M', 'C', 'E'),
+        rules: () =>
+          z
+            .string()
+            .trim()
+            .min(1, '请输入路由地址')
+            .max(200)
+            .refine(
+              (value) => !/^\w+:/.test(value),
+              '请填写路由路径，链接请填写在链接地址中',
+            ),
+      },
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        clearable: true,
+        maxlength: 200,
+        placeholder: '如 /system/user',
+      },
+      fieldName: 'meta.activePath',
+      label: '激活路径',
+      help: '当前页面打开时高亮的菜单路径',
+      dependencies: showFor('C', 'E'),
+      rules: z.string().optional(),
+    },
+    {
+      component: 'IconPicker',
+      componentProps: { prefix: 'lucide' },
+      fieldName: 'icon',
+      label: '菜单图标',
+      dependencies: showFor('M', 'C', 'E', 'L'),
+    },
+    {
+      component: 'IconPicker',
+      componentProps: { prefix: 'lucide' },
+      fieldName: 'meta.activeIcon',
+      label: '激活图标',
+      dependencies: showFor('M', 'C', 'E'),
+    },
+    {
+      component: 'Input',
+      componentProps: {
+        clearable: true,
+      },
+      fieldName: 'component',
+      label: '组件路径',
+      dependencies: {
+        ...showFor('C'),
+        rules: (values) => (values.menuType === 'C' ? 'required' : null),
+      },
+    },
+    {
+      component: 'Input',
+      componentProps: { maxlength: 2000, placeholder: 'https://example.com' },
+      fieldName: 'linkSrc',
+      label: '链接地址',
+      dependencies: showFor('E', 'L'),
+      rules: z
+        .url('请输入有效链接')
+        .refine((value) => /^https?:\/\//i.test(value), '仅支持 HTTP(S) 链接'),
+    },
+    {
+      component: 'Input',
+      componentProps: { maxlength: 100, placeholder: '如 system:menu:add' },
+      fieldName: 'perms',
+      label: '权限标识',
+      dependencies: {
+        ...showFor('M', 'C', 'E', 'F'),
+        rules: (values) =>
+          values.menuType === 'F'
+            ? z.string().trim().min(1, '请输入权限标识')
+            : null,
+      },
+    },
+    {
+      component: 'RadioGroup',
+      componentProps: {
+        isButton: true,
+        options: [
+          { label: '启用', value: '0' },
+          { label: '停用', value: '1' },
+        ],
+      },
+      defaultValue: '0',
+      fieldName: 'status',
+      label: '状态',
     },
     {
       component: 'InputNumber',
-      componentProps: { class: 'w-full', min: 0, precision: 0 },
+      componentProps: { min: 0, precision: 0 },
       defaultValue: 1,
       fieldName: 'orderNum',
       label: '显示排序',
       rules: 'required',
     },
     {
-      component: 'Input',
-      componentProps: { maxlength: 200 },
-      dependencies: {
-        triggerFields: ['isFrame', 'menuType'],
-        resolve: ({ values }) => ({
-          componentProps: {
-            placeholder:
-              values.isFrame === '0'
-                ? '请输入 http(s):// 链接'
-                : '如 menu、user 或 http(s):// 链接',
-          },
-          rules:
-            values.isFrame === '0'
-              ? z.string().regex(/^https?:\/\//, '请输入正确的链接地址')
-              : z
-                  .string()
-                  .min(1, '请输入路由地址')
-                  .refine(
-                    (value) => !value.startsWith('/'),
-                    '路由地址不需要带 / 前缀',
-                  ),
-          show: values.menuType !== 'F',
-        }),
-      },
-      fieldName: 'path',
-      label: '路由地址',
-      help: '路由地址不带 / 前缀；链接以 http(s):// 开头',
-    },
-    {
-      component: 'Input',
-      componentProps: { maxlength: 255, placeholder: '如 system/menu/index' },
-      dependencies: {
-        triggerFields: ['menuType'],
-        resolve: ({ values }) => ({
-          // 当前后端要求所有 C 类型菜单都提交组件路径，包括外链。
-          rules: z
-            .string()
-            .min(1, '请输入组件路径')
-            .refine(
-              (value) => !value.startsWith('/') && !value.endsWith('/'),
-              '组件路径开头和末尾不需要带 /',
-            ),
-          show: values.menuType === 'C',
-        }),
-      },
-      fieldName: 'component',
-      label: '组件路径',
-      help: '填写 src/views 下的组件路径，如 system/menu/index',
-    },
-    {
-      component: 'Input',
-      componentProps: { maxlength: 100 },
-      dependencies: {
-        triggerFields: ['menuType'],
-        resolve: ({ values }) => ({ show: values.menuType !== 'M' }),
-      },
-      fieldName: 'perms',
-      label: '权限标识',
-      help: '与后端权限标识一致，如 system:menu:add',
-    },
-    {
-      component: 'RadioGroup',
-      componentProps: { isButton: true, options: MENU_FRAME_OPTIONS },
-      defaultValue: '1',
-      dependencies: {
-        triggerFields: ['menuType'],
-        resolve: ({ values }) => ({ show: values.menuType !== 'F' }),
-      },
-      fieldName: 'isFrame',
-      label: '是否外链',
-    },
-    {
-      component: 'RadioGroup',
-      componentProps: { isButton: true, options: MENU_VISIBLE_OPTIONS },
-      defaultValue: '0',
-      dependencies: {
-        triggerFields: ['menuType'],
-        resolve: ({ values }) => ({ show: values.menuType !== 'F' }),
-      },
-      fieldName: 'visible',
-      label: '是否显示',
-      help: '隐藏后不显示在菜单栏，仍可通过路由访问',
-    },
-    {
-      component: 'RadioGroup',
-      componentProps: { isButton: true, options: MENU_STATUS_OPTIONS },
-      defaultValue: '0',
-      dependencies: {
-        triggerFields: ['menuType'],
-        resolve: ({ values }) => ({ show: values.menuType !== 'F' }),
-      },
-      fieldName: 'status',
-      label: '菜单状态',
-      help: '停用后不显示在菜单栏，也无法访问',
-    },
-    {
-      component: 'RadioGroup',
-      componentProps: { isButton: true, options: MENU_CACHE_OPTIONS },
-      defaultValue: '0',
-      dependencies: {
-        triggerFields: ['menuType'],
-        resolve: ({ values }) => ({ show: values.menuType === 'C' }),
-      },
-      fieldName: 'isCache',
-      label: '是否缓存',
-      help: '控制路由的 keepAlive 属性',
-    },
-    {
-      component: 'Input',
+      component: 'Select',
       componentProps: {
-        maxlength: 255,
-        placeholder: 'JSON 格式，如 {"id":"1"}',
+        clearable: true,
+        options: [
+          { label: '点', value: 'dot' },
+          { label: '文本', value: 'normal' },
+        ],
       },
-      dependencies: {
-        triggerFields: ['menuType'],
-        resolve: ({ values }) => ({ show: values.menuType === 'C' }),
-      },
-      fieldName: 'query',
-      label: '路由参数',
+      fieldName: 'meta.badgeType',
+      label: '徽标类型',
+      dependencies: showFor('M', 'C', 'E', 'L'),
     },
     {
       component: 'Input',
-      componentProps: { maxlength: 500, rows: 3, type: 'textarea' },
-      fieldName: 'remark',
-      label: '备注',
+      componentProps: { clearable: true, maxlength: 100 },
+      fieldName: 'meta.badge',
+      label: '徽标内容',
+      dependencies: {
+        ...showFor('M', 'C', 'E', 'L'),
+        triggerFields: ['menuType', 'meta.badgeType'],
+        disabled: (values) => values.meta?.badgeType !== 'normal',
+      },
+    },
+    {
+      component: 'Select',
+      componentProps: {
+        clearable: true,
+        options: [
+          'default',
+          'destructive',
+          'primary',
+          'success',
+          'warning',
+        ].map((value) => ({ label: value, value })),
+      },
+      fieldName: 'meta.badgeVariants',
+      label: '徽标颜色',
+      dependencies: showFor('M', 'C', 'E', 'L'),
+    },
+    {
+      component: 'Divider',
+      fieldName: 'advancedDivider',
+      hideLabel: true,
+      formItemClass: 'col-span-2 md:col-span-2',
+      renderComponentContent: () => ({ default: () => '高级设置' }),
+      dependencies: showFor('M', 'C', 'E', 'L'),
+    },
+    {
+      component: 'Checkbox',
+      componentProps: { trueValue: '0', falseValue: '1' },
+      defaultValue: '1',
+      fieldName: 'isCache',
+      hideLabel: true,
+      renderComponentContent: () => ({ default: () => '缓存页面' }),
+      dependencies: showFor('C'),
+    },
+    {
+      component: 'Checkbox',
+      defaultValue: false,
+      fieldName: 'meta.affixTab',
+      hideLabel: true,
+      renderComponentContent: () => ({ default: () => '固定标签页' }),
+      dependencies: showFor('C', 'E'),
+    },
+    {
+      component: 'Checkbox',
+      componentProps: { trueValue: '1', falseValue: '0' },
+      defaultValue: '0',
+      fieldName: 'visible',
+      hideLabel: true,
+      renderComponentContent: () => ({ default: () => '在菜单中隐藏' }),
+      dependencies: showFor('M', 'C', 'E', 'L'),
+    },
+    {
+      component: 'Checkbox',
+      defaultValue: false,
+      fieldName: 'meta.hideChildrenInMenu',
+      hideLabel: true,
+      renderComponentContent: () => ({ default: () => '隐藏子菜单' }),
+      dependencies: showFor('M', 'C'),
+    },
+    {
+      component: 'Checkbox',
+      defaultValue: false,
+      fieldName: 'meta.hideInBreadcrumb',
+      hideLabel: true,
+      renderComponentContent: () => ({ default: () => '在面包屑中隐藏' }),
+      dependencies: showFor('M', 'C', 'E'),
+    },
+    {
+      component: 'Checkbox',
+      defaultValue: false,
+      fieldName: 'meta.hideInTab',
+      hideLabel: true,
+      renderComponentContent: () => ({ default: () => '在标签栏中隐藏' }),
+      dependencies: showFor('M', 'C', 'E'),
     },
   ];
 }

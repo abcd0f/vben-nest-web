@@ -280,7 +280,7 @@ async function initComponentAdapter() {
     Divider: ElDivider,
     IconPicker: withDefaultPlaceholder(IconPicker, 'select', {
       iconSlot: 'append',
-      modelValueProp: 'model-value',
+      modelValueProp: 'modelValue',
       inputComponent: ElInput,
     }),
     Input: withDefaultPlaceholder(ElInput, 'input'),
