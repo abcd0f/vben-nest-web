@@ -3,7 +3,7 @@ import type { MonitorOperLogApi } from '#/api/monitor/oper-log/model';
 
 import { computed, ref } from 'vue';
 
-import { useVbenDrawer } from '@vben/common-ui';
+import { JsonViewer, useVbenDrawer } from '@vben/common-ui';
 
 import {
   ElDescriptions,
@@ -81,9 +81,7 @@ const [Drawer, drawerApi] = useVbenDrawer({
         {{ record.operTime }}
       </ElDescriptionsItem>
       <ElDescriptionsItem label="请求参数">
-        <ElText class="break-all" type="info">
-          <pre class="whitespace-pre-wrap">{{ paramText }}</pre>
-        </ElText>
+        <JsonViewer :value="paramText" boxed />
       </ElDescriptionsItem>
       <ElDescriptionsItem label="错误消息">
         <ElText class="break-all" type="danger">
