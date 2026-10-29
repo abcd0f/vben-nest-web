@@ -41,7 +41,7 @@ const props = withDefaults(defineProps<IconPickerProps>(), {
   icons: () => [],
   iconSlot: 'default',
   iconClass: 'size-4',
-  autoFetchApi: true,
+  autoFetchApi: false,
   modelValueProp: 'modelValue',
   inputComponent: undefined,
   type: 'input',

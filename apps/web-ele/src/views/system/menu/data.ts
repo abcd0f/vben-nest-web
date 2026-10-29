@@ -4,6 +4,7 @@ import type { VbenFormSchema } from '#/adapter/form';
 import type { VxeTableGridColumns } from '#/adapter/vxe-table';
 import type { SystemMenuApi } from '#/api/system/menu/model';
 
+import { listIcons } from '@vben/icons';
 import { $t, $te } from '@vben/locales';
 
 import { z } from '#/adapter/form';
@@ -78,6 +79,15 @@ function showFor(...types: SystemMenuApi.MenuType[]) {
       !!values.menuType && types.includes(values.menuType),
   };
 }
+
+/**
+ * 本地已注册的全部离线图标快照，共 68 个：
+ * - iconify 离线图标（@vben/icons 的 iconify-offline/offline-icons.ts）
+ * - 本地 svg 转成的 svg:xxx（@vben/icons 的 svg/load.ts）
+ *
+ * IconPicker 在 prefix 为空时直接使用这份列表，不会请求 api.iconify.design。
+ */
+const OFFLINE_ICONS = listIcons();
 
 export function menuFormSchema(): VbenFormSchema<MenuFormValues>[] {
   return [
@@ -164,14 +174,14 @@ export function menuFormSchema(): VbenFormSchema<MenuFormValues>[] {
     },
     {
       component: 'IconPicker',
-      componentProps: { prefix: 'lucide' },
+      componentProps: { prefix: '', icons: OFFLINE_ICONS },
       fieldName: 'icon',
       label: '菜单图标',
       dependencies: showFor('M', 'C', 'E', 'L'),
     },
     {
       component: 'IconPicker',
-      componentProps: { prefix: 'lucide' },
+      componentProps: { prefix: '', icons: OFFLINE_ICONS },
       fieldName: 'meta.activeIcon',
       label: '激活图标',
       dependencies: showFor('M', 'C', 'E'),
